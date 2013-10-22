@@ -42,3 +42,6 @@ group :resque do
 end
 
 gem 'navvy', :group => :navvy
+
+gem 'sidekiq', :group => :sidekiq
+

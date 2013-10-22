@@ -322,6 +322,7 @@ public abstract class WorkerManager {
                 put("delayed", "delayed/start_worker.rb"); // alias
                 put("navvy", "navvy/start_worker.rb");
                 put("resque", "resque/start_worker.rb");
+                put("sidekiq", "sidekiq/start_worker.rb");
             }
 
         };
