@@ -10,7 +10,7 @@ module Sidekiq
       @cli = Sidekiq::CLI.instance
       @cli.parse []
       @cli.run
-      @logger.logger.info '*** Sidekiq is running'
+      @logger.info '*** Sidekiq is running'
     end
 
     def self.exit!
