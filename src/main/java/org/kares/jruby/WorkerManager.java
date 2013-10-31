@@ -126,7 +126,7 @@ public abstract class WorkerManager {
     protected void startup(final WorkerScript workerScript)
     {
         final int workersCount = getThreadCount();
-        log("[" + getClass().getName() + "] starting " + workers.size() + " worker(s) for: " + workerScript);
+        log("[" + getClass().getName() + "] starting " + workersCount + " worker(s) for: " + workerScript);
 
         final ThreadFactory threadFactory = newThreadFactory();
         for ( int i = 0; i < workersCount; i++ ) {
@@ -154,7 +154,8 @@ public abstract class WorkerManager {
             }
         }
 
-        log("[" + getClass().getName() + "] started " + workers.size() + " worker(s) for: " + workerScript);
+        log("[" + getClass().getName() + "] started " + workersCount + " worker(s) for: " + workerScript
+            + " - Total active workers: " + workers.size());
     }
 
     /**

@@ -36,6 +36,15 @@ public class WorkerScript
     @Override
     public String toString()
     {
-        return String.format("[script: %s, file: %s]",  script, fileName);
+        final StringBuilder sb = new StringBuilder("[");
+        if (script != null) {
+            sb.append("script: ").append(script);
+        }
+        if (fileName != null) {
+            sb.append("fileName: ").append(fileName);
+        }
+        sb.append("]");
+
+        return sb.toString();
     }
 }
