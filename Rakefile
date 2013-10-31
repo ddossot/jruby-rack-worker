@@ -77,7 +77,7 @@ end
 
 task :compile => :retrieve do
   mkdir_p MAIN_BUILD_DIR
-  ant.javac :destdir => MAIN_BUILD_DIR, :source => '1.5' do
+  ant.javac :destdir => MAIN_BUILD_DIR, :source => '1.7' do
     src :path => MAIN_SRC_DIR
     classpath :refid => "main.class.path"
   end
