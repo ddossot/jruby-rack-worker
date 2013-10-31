@@ -116,6 +116,8 @@ public abstract class WorkerManager {
             return;
         }
 
+        log("[" + getClass().getName() + "] located " + workerScripts.size() + " worker(s) configurations");
+
         for (final WorkerScript workerScript:workerScripts) {
             startup(workerScript);
         }
@@ -124,6 +126,7 @@ public abstract class WorkerManager {
     protected void startup(final WorkerScript workerScript)
     {
         final int workersCount = getThreadCount();
+        log("[" + getClass().getName() + "] starting " + workers.size() + " worker(s) for: " + workerScript);
 
         final ThreadFactory threadFactory = newThreadFactory();
         for ( int i = 0; i < workersCount; i++ ) {
@@ -150,6 +153,7 @@ public abstract class WorkerManager {
                 break;
             }
         }
+
         log("[" + getClass().getName() + "] started " + workers.size() + " worker(s) for: " + workerScript);
     }
 
@@ -159,6 +163,7 @@ public abstract class WorkerManager {
     public void shutdown() {
         final Map<RubyWorker, Thread> workers = new HashMap<RubyWorker, Thread>(this.workers);
         this.workers.clear();
+
         for ( final RubyWorker worker : workers.keySet() ) {
             if ( isExported() ) {
                 worker.runtime.getGlobalVariables().clear(GLOBAL_VAR_NAME);
