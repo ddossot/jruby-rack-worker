@@ -27,12 +27,13 @@ import org.kares.jruby.WorkerManager;
  * @author kares <self_AT_kares_DOT_org>
  */
 public class WorkerContextListener implements ServletContextListener {
-    
+
     private WorkerManager workerManager;
 
     /**
      * @param event
      */
+    @Override
     public void contextInitialized(final ServletContextEvent event) {
         getWorkerManager( event.getServletContext() ).startup();
     }
@@ -40,6 +41,7 @@ public class WorkerContextListener implements ServletContextListener {
     /**
      * @param event
      */
+    @Override
     public void contextDestroyed(final ServletContextEvent event) {
         getWorkerManager( event.getServletContext() ).shutdown();
     }
@@ -51,8 +53,8 @@ public class WorkerContextListener implements ServletContextListener {
         return workerManager;
     }
 
-    void setWorkerManager(WorkerManager workerManager) {
+    void setWorkerManager(final WorkerManager workerManager) {
         this.workerManager = workerManager;
     }
-    
+
 }

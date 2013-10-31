@@ -6,3 +6,6 @@ build.xml
 catalog.xml
 Gemfile.lock
 src/test/resources/db/delayed.db
+.project
+.classpath
+.settings/

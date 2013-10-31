@@ -28,8 +28,8 @@ import javax.servlet.ServletContext;
 public abstract class ServletWorkerManager extends WorkerManager {
 
     private final ServletContext context;
-    
-    public ServletWorkerManager(ServletContext context) {
+
+    public ServletWorkerManager(final ServletContext context) {
         if (context == null) {
             throw new IllegalArgumentException("null context");
         }
@@ -40,29 +40,29 @@ public abstract class ServletWorkerManager extends WorkerManager {
     public ServletContext getServletContext() {
         return context;
     }
-    
+
     @Override
-    public String getParameter(String key) {
+    public String getParameter(final String key) {
         String val = context.getInitParameter(key);
         if (val == null) {
             val = super.getParameter(key);
         }
         return val;
     }
-    
+
     @Override
-    protected InputStream openPath(String path) throws IOException {
+    protected InputStream openPath(final String path) throws IOException {
         return context.getResourceAsStream(path);
     }
-    
+
     @Override
-    protected void log(String message) {
+    protected void log(final String message) {
         context.log(message);
     }
 
     @Override
-    protected void log(String message, Exception e) {
+    protected void log(final String message, final Exception e) {
         context.log(message, e);
     }
-    
+
 }

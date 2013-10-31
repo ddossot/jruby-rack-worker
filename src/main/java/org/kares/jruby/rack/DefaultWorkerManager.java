@@ -31,7 +31,7 @@ import org.kares.jruby.ServletWorkerManager;
  * @author kares <self_AT_kares_DOT_org>
  */
 public class DefaultWorkerManager extends ServletWorkerManager {
-    
+
     public DefaultWorkerManager(final ServletContext context) {
         super(context);
     }
@@ -41,10 +41,10 @@ public class DefaultWorkerManager extends ServletWorkerManager {
         // obtain JRuby runtime from JRuby-Rack :
         final RackApplicationFactory appFactory = getRackFactory();
         if ( appFactory == null ) {
-            final String message = 
-                    RackApplicationFactory.class.getName() + " not yet initialized - " +
-                    "seems this listener is executing before the " +
-                    "RackServletContextListener / RailsSevletContextListener !";
+            final String message =
+                            RackApplicationFactory.class.getName() + " not yet initialized - " +
+                                            "seems this listener is executing before the " +
+                                            "RackServletContextListener / RailsSevletContextListener !";
             log("[" + getClass().getName() + "] " + message);
             throw new IllegalStateException(message);
         }
@@ -52,7 +52,7 @@ public class DefaultWorkerManager extends ServletWorkerManager {
         try {
             app = appFactory.getApplication();
         }
-        catch (RackException e) {
+        catch (final RackException e) {
             throw new UnsupportedOperationException(e); // rack/rails initialization failure
         }
         if ( app == null ) {
@@ -63,17 +63,17 @@ public class DefaultWorkerManager extends ServletWorkerManager {
         }
         return app.getRuntime();
     }
-    
+
     protected RackContext getRackContext() {
         return (RackContext) getServletContext().
-            getAttribute( RackApplicationFactory.RACK_CONTEXT );
+                        getAttribute( RackApplicationFactory.RACK_CONTEXT );
     }
 
     protected RackApplicationFactory getRackFactory() {
         return (RackApplicationFactory) getServletContext().
-            getAttribute( RackApplicationFactory.FACTORY );
+                        getAttribute( RackApplicationFactory.FACTORY );
     }
-    
+
     private RackLogger logger;
 
     public RackLogger getLogger() {
@@ -87,12 +87,12 @@ public class DefaultWorkerManager extends ServletWorkerManager {
         return logger;
     }
 
-    public synchronized void setLogger(RackLogger logger) {
+    public synchronized void setLogger(final RackLogger logger) {
         this.logger = logger;
     }
-    
+
     @Override
-    protected void log(String message) {
+    protected void log(final String message) {
         final RackLogger logger = getLogger();
         if (logger != null) {
             logger.log(RackLogger.INFO, message);
@@ -103,7 +103,7 @@ public class DefaultWorkerManager extends ServletWorkerManager {
     }
 
     @Override
-    protected void log(String message, Exception e) {
+    protected void log(final String message, final Exception e) {
         final RackLogger logger = getLogger();
         if (logger != null) {
             logger.log(RackLogger.ERROR, message, e);
@@ -112,5 +112,5 @@ public class DefaultWorkerManager extends ServletWorkerManager {
             super.log(message, e);
         }
     }
-    
+
 }

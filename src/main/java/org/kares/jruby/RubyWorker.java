@@ -38,6 +38,7 @@ public class RubyWorker implements Runnable {
         this.fileName = fileName;
     }
 
+    @Override
     public void run() {
         if ( fileName == null ) {
             runtime.evalScriptlet(script);

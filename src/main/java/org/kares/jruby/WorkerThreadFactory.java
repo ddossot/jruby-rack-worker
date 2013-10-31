@@ -29,17 +29,17 @@ public class WorkerThreadFactory implements ThreadFactory {
      * Thread name identifier, all threads created with this factory
      * contain the given identifier.
      * 
-     * NOTE: The general convention is that native thread names contain the word 
+     * NOTE: The general convention is that native thread names contain the word
      * "worker" to easy identifying worker threads whenever needed.
      */
     public static final String NAME_ID = "jruby-rack-worker#";
-    
+
     static final AtomicInteger threadCount = new AtomicInteger(1);
 
     private final String prefix;
 
     private boolean daemonizeThreads = true;
-    
+
     private volatile int priority; // priorities index if priorities != null
     private final int[] priorities;
 
@@ -52,16 +52,17 @@ public class WorkerThreadFactory implements ThreadFactory {
     public WorkerThreadFactory(final String prefix, final int[] priorities) {
         this(prefix, priorities, 0);
     }
-    
+
     private WorkerThreadFactory(final String prefix, final int[] priorities, final int priority) {
         this.priorities = priorities; this.priority = priority;
         this.prefix = ( prefix == null || prefix.length() == 0 ) ? "" : prefix + '-';
         final SecurityManager securityManager = System.getSecurityManager();
         this.group = ( securityManager != null ) ?
-                    securityManager.getThreadGroup() :
-                        Thread.currentThread().getThreadGroup();
+                                                  securityManager.getThreadGroup() :
+                                                      Thread.currentThread().getThreadGroup();
     }
-    
+
+    @Override
     public Thread newThread(final Runnable task) {
         final String threadName = prefix + NAME_ID + threadCount.getAndIncrement();
         final Thread thread = new Thread(group, task, threadName, 0);
@@ -74,10 +75,10 @@ public class WorkerThreadFactory implements ThreadFactory {
         return daemonizeThreads;
     }
 
-    public void setDaemonizeThreads(boolean daemonizeThreads) {
+    public void setDaemonizeThreads(final boolean daemonizeThreads) {
         this.daemonizeThreads = daemonizeThreads;
     }
-    
+
     protected int nextThreadPriority() {
         if (priorities != null) {
             synchronized(this) {
@@ -89,5 +90,5 @@ public class WorkerThreadFactory implements ThreadFactory {
         }
         return priority;
     }
-    
+
 }

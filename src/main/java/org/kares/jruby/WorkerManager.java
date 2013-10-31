@@ -23,7 +23,10 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
 import java.util.regex.Matcher;
@@ -86,7 +89,7 @@ public abstract class WorkerManager {
      * between 1 - 10.
      */
     public static final String THREAD_PRIORITY_KEY = "jruby.worker.thread.priority";
-    
+
     /**
      * By default a WorkerManager instance is exported with it's Ruby runtime.
      * This is very useful to resolve configuration keys per runtime the same
@@ -95,52 +98,59 @@ public abstract class WorkerManager {
      */
     protected static final String EXPORTED_NAME = "worker_manager";
     private static final String GLOBAL_VAR_NAME = '$' + EXPORTED_NAME;
-    
+
     private boolean exported = true;
-    
+
     protected final Map<RubyWorker, Thread> workers = new HashMap<RubyWorker, Thread>(4);
-    
+
     /**
      * Startup all workers.
      */
     public void startup() {
-        final String[] workerScript = getWorkerScript(); // [ script, fileName ]
+        final List<WorkerScript> workerScripts = getWorkerScripts();
 
-        if ( workerScript == null ) {
+        if (workerScripts.isEmpty()) {
             final String message = "no worker script to execute - configure one using '" + SCRIPT_KEY + "' " +
-                    "or '" + SCRIPT_PATH_KEY + "' parameter (or see previous errors if already configured) ";
+                            "or '" + SCRIPT_PATH_KEY + "' parameter (or see previous errors if already configured) ";
             log("[" + getClass().getName() + "] " + message + " !");
-            return; // throw new IllegalStateException(message);
+            return;
         }
 
+        for (final WorkerScript workerScript:workerScripts) {
+            startup(workerScript);
+        }
+    }
+
+    protected void startup(final WorkerScript workerScript)
+    {
         final int workersCount = getThreadCount();
-        
+
         final ThreadFactory threadFactory = newThreadFactory();
         for ( int i = 0; i < workersCount; i++ ) {
             final Ruby runtime;
             try {
                 runtime = getRuntime(); // handles DefaultErrorApplication.getRuntime
             }
-            catch (UnsupportedOperationException e) { // error happened during JRuby-Rack startup
+            catch (final UnsupportedOperationException e) { // error happened during JRuby-Rack startup
                 log("[" + getClass().getName() + "] failed to obtain (Ruby) runtime");
                 break;
             }
-            
+
             if ( isExported() ) {
                 runtime.getGlobalVariables().set(GLOBAL_VAR_NAME, JavaEmbedUtils.javaToRuby(runtime, this));
             }
             try {
-                final RubyWorker worker = newRubyWorker(runtime, workerScript[0], workerScript[1]);
+                final RubyWorker worker = newRubyWorker(runtime, workerScript.getScript(), workerScript.getFileName());
                 final Thread workerThread = threadFactory.newThread(worker);
                 workers.put(worker, workerThread);
                 workerThread.start();
             }
-            catch (Exception e) {
+            catch (final Exception e) {
                 log("[" + getClass().getName() + "] worker startup failed", e);
                 break;
             }
         }
-        log("[" + getClass().getName() + "] started " + workers.size() + " worker(s)");
+        log("[" + getClass().getName() + "] started " + workers.size() + " worker(s) for: " + workerScript);
     }
 
     /**
@@ -161,11 +171,11 @@ public abstract class WorkerManager {
                 workerThread.interrupt();
                 workerThread.join(1000);
             }
-            catch (InterruptedException e) {
+            catch (final InterruptedException e) {
                 log("[" + getClass().getName() + "] interrupted");
                 Thread.currentThread().interrupt();
             }
-            catch (Exception e) {
+            catch (final Exception e) {
                 log("[" + getClass().getName() + "] ignoring exception " + e);
             }
         }
@@ -178,60 +188,61 @@ public abstract class WorkerManager {
         } */
         log("[" + getClass().getName() + "] stopped " + workers.size() + " worker(s)");
     }
-    
+
     /**
-     * This shall be implemented by concrete classes and should return an 
+     * This shall be implemented by concrete classes and should return an
      * (initialized) JRuby runtime ready to be used by a worker.
      * 
-     * By default this method is expected to be called as many times as the 
+     * By default this method is expected to be called as many times as the
      * configured worker count, thus shall return the same runtime only if
      * it's thread-safe !
      * @return a Ruby runtime
      */
     protected abstract Ruby getRuntime() ;
-    
+
     // ----------------------------------------
-    // properties 
+    // properties
     // ----------------------------------------
-    
+
     private String threadPrefix;
 
     public String getThreadPrefix() {
         return threadPrefix;
     }
 
-    public void setThreadPrefix(String threadPrefix) {
+    public void setThreadPrefix(final String threadPrefix) {
         this.threadPrefix = threadPrefix;
     }
-    
+
     private Integer threadCount;
-    
+
+    // TODO make this configurable per worker
     public Integer getThreadCount() {
         if (threadCount == null) {
-            String count = getParameter(THREAD_COUNT_KEY);
+            final String count = getParameter(THREAD_COUNT_KEY);
             try {
                 if ( count != null ) {
                     return threadCount = Integer.parseInt(count);
                 }
             }
-            catch (NumberFormatException e) {
+            catch (final NumberFormatException e) {
                 log("[" + getClass().getName() + "] " +
-                    "could not parse " + THREAD_COUNT_KEY + " parameter value = " + count, e);
+                                "could not parse " + THREAD_COUNT_KEY + " parameter value = " + count, e);
             }
             threadCount = 1;
         }
         return threadCount;
     }
 
-    public void setThreadCount(Integer threadCount) {
+    public void setThreadCount(final Integer threadCount) {
         this.threadCount = threadCount;
     }
-    
+
     private Integer threadPriority;
-    
+
     public Integer getThreadPriority() {
         if (threadPriority == null) {
-            String priority = getParameter(THREAD_PRIORITY_KEY);
+            final String priority = getParameter(THREAD_PRIORITY_KEY);
             try {
                 if ( priority != null ) {
                     if ( "NORM".equalsIgnoreCase(priority) )
@@ -243,9 +254,9 @@ public abstract class WorkerManager {
                     return threadPriority = Integer.parseInt(priority);
                 }
             }
-            catch (NumberFormatException e) {
+            catch (final NumberFormatException e) {
                 log("[" + getClass().getName() + "] " +
-                    "could not parse " + THREAD_PRIORITY_KEY + " parameter value = '" + priority + "'");
+                                "could not parse " + THREAD_PRIORITY_KEY + " parameter value = '" + priority + "'");
             }
             threadPriority = Thread.NORM_PRIORITY;
         }
@@ -253,21 +264,39 @@ public abstract class WorkerManager {
 
     }
 
-    public void setThreadPriority(Integer threadPriority) {
+    public void setThreadPriority(final Integer threadPriority) {
         this.threadPriority = threadPriority;
     }
-    
+
     /**
-     * Get the worker script/file to execute.
-     * @param context
-     * @return a script, fileName tuple
+     * Get the worker scripts/files to execute.
      */
-    public String[] getWorkerScript() {
-        String worker = getParameter(WORKER_KEY);
+    public List<WorkerScript> getWorkerScripts() {
+        final String workersConfig = getParameter(WORKER_KEY);
+
+        if ( workersConfig == null || workersConfig.length() == 0) {
+            return Collections.emptyList();
+        }
+
+        final String[] workers = workersConfig.split(",");
+        final List<WorkerScript> workerScripts = new ArrayList<>();
+
+        for (final String worker:workers) {
+            final WorkerScript workerScript = getWorkerScript(worker);
+            if (workerScript != null) {
+                workerScripts.add(workerScript);
+            }
+        }
+
+        return workerScripts;
+    }
+
+    protected WorkerScript getWorkerScript(final String worker)
+    {
         if ( worker != null ) {
-            String script = getAvailableWorkers().get( worker.replace("::", "_").toLowerCase() );
+            final String script = getAvailableWorkers().get( worker.replace("::", "_").toLowerCase() );
             if ( script != null ) {
-                return new String [] { null, script };
+                return WorkerScript.forFileName( script );
             }
             else {
                 log("[" + getClass().getName() + "] unsupported worker name: '" + worker + "' !");
@@ -275,9 +304,9 @@ public abstract class WorkerManager {
         }
 
         String script = getParameter(SCRIPT_KEY);
-        if ( script != null ) return new String [] { script, null };
+        if ( script != null ) return WorkerScript.forScript( script );
 
-        String scriptPath = getParameter(SCRIPT_PATH_KEY);
+        final String scriptPath = getParameter(SCRIPT_PATH_KEY);
         if ( scriptPath == null ) return null;
         // INSPIRED BY DefaultRackApplicationFactory :
         try {
@@ -291,8 +320,8 @@ public abstract class WorkerManager {
                     while ((c = scriptStream.read()) != -1 && c != 10) {
                         content.append((char) c);
                     }
-                    Pattern matchCoding = Pattern.compile("coding:\\s*(\\S+)");
-                    Matcher matcher = matchCoding.matcher( content.toString() );
+                    final Pattern matchCoding = Pattern.compile("coding:\\s*(\\S+)");
+                    final Matcher matcher = matchCoding.matcher( content.toString() );
                     if (matcher.find()) coding = matcher.group(1);
                 }
 
@@ -302,18 +331,19 @@ public abstract class WorkerManager {
                 while ((c = reader.read()) != -1) {
                     content.append((char) c);
                 }
-                
+
                 script = content.toString();
             }
         }
-        catch (Exception e) {
+        catch (final Exception e) {
             log("[" + getClass().getName() + "] error reading script: '" + scriptPath + "'", e);
             return null;
         }
 
-        return new String[] { script, scriptPath }; // one of these is != null
+        return WorkerScript.forScriptAndFileName( script, scriptPath ); // one of these is != null
     }
-    
+
+    @SuppressWarnings("serial")
     public Map<String, String> getAvailableWorkers() {
         return new HashMap<String, String>() {
 
@@ -343,11 +373,11 @@ public abstract class WorkerManager {
     public void setExported(final boolean exported) {
         this.exported = exported;
     }
-    
+
     // ----------------------------------------
     // overridables
     // ----------------------------------------
-    
+
     protected RubyWorker newRubyWorker(final Ruby runtime, final String script, final String fileName) {
         return new RubyWorker(runtime, script, fileName);
     }
@@ -355,7 +385,7 @@ public abstract class WorkerManager {
     protected ThreadFactory newThreadFactory() {
         return new WorkerThreadFactory( getThreadPrefix(), getThreadPriority() );
     }
-    
+
     public String getParameter(final String key) {
         return System.getProperty(key);
     }
@@ -364,15 +394,15 @@ public abstract class WorkerManager {
         try {
             return new URL(path).openStream();
         }
-        catch (MalformedURLException e) {
+        catch (final MalformedURLException e) {
             final File file = new File(path);
-            if ( file.exists() && file.isFile() ) { 
+            if ( file.exists() && file.isFile() ) {
                 return new FileInputStream(file);
             }
         }
         return null;
     }
-    
+
     protected void log(final String message) {
         System.out.println(message);
     }
@@ -381,5 +411,5 @@ public abstract class WorkerManager {
         System.err.println(message);
         e.printStackTrace(System.err);
     }
-    
+
 }
