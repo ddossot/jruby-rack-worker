@@ -147,6 +147,7 @@ public abstract class WorkerManager {
                 final Thread workerThread = threadFactory.newThread(worker);
                 workers.put(worker, workerThread);
                 workerThread.start();
+                log("[" + getClass().getName() + "] started worker for: " + workerScript);
             }
             catch (final Exception e) {
                 log("[" + getClass().getName() + "] worker startup failed", e);
@@ -166,16 +167,20 @@ public abstract class WorkerManager {
         this.workers.clear();
 
         for ( final RubyWorker worker : workers.keySet() ) {
+            log("[" + getClass().getName() + "] stopping worker: " + worker);
+
             if ( isExported() ) {
                 worker.runtime.getGlobalVariables().clear(GLOBAL_VAR_NAME);
             }
             final Thread workerThread = workers.get(worker);
             try {
                 worker.stop();
-                // JRuby seems to ignore Java's interrupt arithmentic
+                // JRuby seems to ignore Java's interrupt arithmetic
                 // @see http://jira.codehaus.org/browse/JRUBY-4135
                 workerThread.interrupt();
                 workerThread.join(1000);
+
+                log("[" + getClass().getName() + "] stopped worker: " + worker);
             }
             catch (final InterruptedException e) {
                 log("[" + getClass().getName() + "] interrupted");
@@ -185,13 +190,7 @@ public abstract class WorkerManager {
                 log("[" + getClass().getName() + "] ignoring exception " + e);
             }
         }
-        /*
-        try { Thread.sleep(1000); } // Tomcat is just too fast with it's thread detection !
-        catch (InterruptedException e) {
-            // SEVERE: The web application [/] appears to have started a thread named [worker_1]
-            // but has failed to stop it. This is very likely to create a memory leak.
-            context.log("[" + WorkerContextListener.class.getName() + "] ignoring interrupt " + e);
-        } */
+
         log("[" + getClass().getName() + "] stopped " + workers.size() + " worker(s)");
     }
 
@@ -297,20 +296,20 @@ public abstract class WorkerManager {
         return workerScripts;
     }
 
-    protected WorkerScript getWorkerScript(final String worker)
+    protected WorkerScript getWorkerScript(final String workerId)
     {
-        if ( worker != null ) {
-            final String script = getAvailableWorkers().get( worker.replace("::", "_").toLowerCase() );
+        if ( workerId != null ) {
+            final String script = getAvailableWorkers().get( workerId.replace("::", "_").toLowerCase() );
             if ( script != null ) {
-                return WorkerScript.forFileName( script );
+                return WorkerScript.forFileName( workerId, script );
             }
             else {
-                log("[" + getClass().getName() + "] unsupported worker name: '" + worker + "' !");
+                log("[" + getClass().getName() + "] unsupported worker name: '" + workerId + "' !");
             }
         }
 
         String script = getParameter(SCRIPT_KEY);
-        if ( script != null ) return WorkerScript.forScript( script );
+        if ( script != null ) return WorkerScript.forScript( workerId, script );
 
         final String scriptPath = getParameter(SCRIPT_PATH_KEY);
         if ( scriptPath == null ) return null;
@@ -346,7 +345,7 @@ public abstract class WorkerManager {
             return null;
         }
 
-        return WorkerScript.forScriptAndFileName( script, scriptPath ); // one of these is != null
+        return WorkerScript.forScriptAndFileName( workerId, script, scriptPath ); // one of these is != null
     }
 
     @SuppressWarnings("serial")

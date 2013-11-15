@@ -112,5 +112,4 @@ public class DefaultWorkerManager extends ServletWorkerManager {
             super.log(message, e);
         }
     }
-
 }

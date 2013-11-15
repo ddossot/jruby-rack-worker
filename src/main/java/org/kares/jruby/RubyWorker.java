@@ -57,4 +57,9 @@ public class RubyWorker implements Runnable {
         // if ( true ) runtime.tearDown();
     }
 
+    @Override
+    public String toString()
+    {
+        return fileName != null ? fileName : script;
+    }
 }
