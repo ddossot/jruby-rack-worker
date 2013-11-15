@@ -93,6 +93,11 @@ public class DefaultWorkerManager extends ServletWorkerManager {
 
     @Override
     protected void log(final String message) {
+        if (shouldUseServletLogger()) {
+            super.log(message);
+            return;
+        }
+
         final RackLogger logger = getLogger();
         if (logger != null) {
             logger.log(RackLogger.INFO, message);
@@ -104,6 +109,11 @@ public class DefaultWorkerManager extends ServletWorkerManager {
 
     @Override
     protected void log(final String message, final Exception e) {
+        if (shouldUseServletLogger()) {
+            super.log(message,e);
+            return;
+        }
+
         final RackLogger logger = getLogger();
         if (logger != null) {
             logger.log(RackLogger.ERROR, message, e);

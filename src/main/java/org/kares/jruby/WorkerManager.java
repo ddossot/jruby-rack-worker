@@ -91,6 +91,11 @@ public abstract class WorkerManager {
     public static final String THREAD_PRIORITY_KEY = "jruby.worker.thread.priority";
 
     /**
+     * If the servlet logger must be used instead of the RackLogger.
+     */
+    public static final String FORCE_USE_SERVLET_LOGGER = "jruby.worker.logger.forceservlet";
+
+    /**
      * By default a WorkerManager instance is exported with it's Ruby runtime.
      * This is very useful to resolve configuration keys per runtime the same
      * way the manager does (using {@link #getParameter(java.lang.String)}).
@@ -237,6 +242,10 @@ public abstract class WorkerManager {
             threadCount = 1;
         }
         return threadCount;
+    }
+
+    public boolean shouldUseServletLogger() {
+        return Boolean.valueOf(getParameter(FORCE_USE_SERVLET_LOGGER));
     }
 
     public void setThreadCount(final Integer threadCount) {
