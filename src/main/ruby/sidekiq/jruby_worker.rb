@@ -6,6 +6,9 @@ module Sidekiq
 
     def self.start
       @logger = Logger.new(STDOUT)
+
+      at_exit { exit! }
+
       @logger.info '*** Starting Sidekiq'
       @cli = Sidekiq::CLI.instance
       @cli.parse []
