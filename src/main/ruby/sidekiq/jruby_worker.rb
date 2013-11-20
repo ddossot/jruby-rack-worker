@@ -1,5 +1,5 @@
-require 'sidekiq/cli'
-require 'logger'
+require 'sidekiq'
+require 'sidekiq/util'
 
 module Sidekiq
   class JRubyWorker
@@ -9,19 +9,27 @@ module Sidekiq
 
       at_exit { exit! }
 
+      require 'celluloid/autostart'
+      require 'celluloid'
+      require 'sidekiq/manager'
+      require 'sidekiq/scheduled'
+      require 'sidekiq/launcher'
+
+      options = Sidekiq.options
+      options[:queues] << 'default'
+
       @logger.info '*** Starting Sidekiq'
-      @cli = Sidekiq::CLI.instance
-      @cli.parse []
-      @cli.run
+      @launcher = Sidekiq::Launcher.new(options)
+      @launcher.run
       @logger.info '*** Sidekiq is running'
     end
 
     def self.exit!
-      @logger.info '*** Sending TERM signal to Sidekiq'
-      # see https://github.com/mperham/sidekiq/wiki/Signals#term
-      @cli.send(:handle_signal, 'TERM')
-      # Sidekiq has 8 seconds to finish, let's wait 10 like Heroku
-      sleep 10
+      @logger.info '*** Stopping Sidekiq'
+      @launcher.stop
+
+      @logger.info '*** Stopping Celluloid'
+      Celluloid.shutdown
     end
 
   end
