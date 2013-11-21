@@ -2,6 +2,8 @@ require 'sidekiq'
 require 'sidekiq/util'
 
 module Sidekiq
+  class Shutdown < Interrupt; end
+  
   class JRubyWorker
 
     def self.start
